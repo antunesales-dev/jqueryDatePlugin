@@ -1,22 +1,22 @@
 {
-  "name": "jquery-date",
-  "version": "2.0.1",
-  "description": "jquery-date 多格式、功能强大的移动端日期选择插件",
-  "main": "dist/jdate.min.js",
+  "name": "rolldate",
+  "version": "3.1.3",
+  "description": "rolldate Multi-format, powerful mobile date selection plugin",
+  "main": "dist/rolldate.min.js",
   "scripts": {
-    "dev": "cross-env NODE_ENV=development webpack-dev-server --config config/jdate.config.js --mode development",
+    "dev": "cross-env NODE_ENV=development webpack-dev-server --config config/rolldate.config.js --mode development",
     "build": "cross-env rollup -c",
-    "wpbuild": "cross-env NODE_ENV=production webpack --config config/jdate.config.js --mode production",
+    "wpbuild": "cross-env NODE_ENV=production webpack --config config/rolldate.config.js --mode production",
     "start": "npm run wpbuild && npm run build"
   },
   "keywords": [
     "date",
     "time",
-    "jquery-date"
+    "js-date"
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/weijhfly/jqueryDatePlugin"
+    "url": "https://github.com/weijhfly/rolldate"
   },
   "author": "雾空",
   "license": "MIT",
@@ -35,6 +35,7 @@
     "cross-env": "^5.2.0",
     "css-loader": "^1.0.0",
     "cssnano": "^4.1.10",
+    "eslint": "^6.8.0",
     "extract-text-webpack-plugin": "^4.0.0-beta.0",
     "html-webpack-plugin": "^3.2.0",
     "less": "^3.8.0",

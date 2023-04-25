@@ -11,40 +11,52 @@ import merge from 'webpack-merge';
 import json from 'rollup-plugin-json';
 
 let year = new Date().getFullYear(),
-    version = pkg.version;
+  version = pkg.version;
 
-const bannerText =`Jdate ${version}\nCopyright 2017-${year}\nweijhfly https://github.com/weijhfly/jqueryDatePlugin\nLicensed under MIT\nReleased on: jan 24, 2017`;
+let bannerText = `Rolldate ${version}
+Copyright 2018-${year}
+weijhfly https://github.com/weijhfly/rolldate
+Licensed under MIT
+Released on: aug 4, 2018`;
 
+console.log(bannerText)
 let config = {
-    input: 'src/index.js',
-    output: {
-      name: 'Jdate',
-      file: 'dist/jdate.js',
-      format: 'umd',
-    },
-    plugins: [
-      resolve(),
-      commonjs(),
-      json(),
-      postcss({
-          plugins: [
-            autoprefixer({//补全前缀
-        			browsers: ['last 20 versions']
-        		}),
-            cssnano
-          ],
-          //extract: 'dist/css/bundle.css' // 输出路径
-      }),
-      babel({
-        exclude: 'node_modules/**', // 排除引入的库
-        runtimeHelpers: true // 配置runtime，不设置会报错
-      }),
-      banner(bannerText),
-    ],
-  };
+  input: 'src/index.js',
+  output: {
+    name: 'Rolldate',
+    file: 'dist/rolldate.js',
+    format: 'umd',
+  },
+  plugins: [
+    resolve(),
+    commonjs(),
+    json(),
+    postcss({
+      plugins: [
+        autoprefixer({//completion prefix
+          overrideBrowserslist: ['last 20 versions']
+        }),
+        cssnano
+      ],
+      //extract: 'dist/css/bundle.css' // output path
+    }),
+    babel({
+      exclude: 'node_modules/**', // Exclude imported libraries
+      runtimeHelpers: true // Configure runtime, if not set, an error will be reported
+    }),
+    banner(bannerText),
+  ],
+};
 
-let confinMin = merge({}, config);
+let [min, es, cjs] = [merge({}, config), merge({}, config), merge({}, config)];
 
-confinMin.output.file = 'dist/jdate.min.js';
-confinMin.plugins.unshift(uglify());
-export default [config, confinMin];
+min.output.file = 'dist/rolldate.min.js';
+min.plugins.unshift(uglify());
+
+es.output.file = 'dist/rolldate.es.js';
+es.output.format = 'es';
+
+cjs.output.file = 'dist/rolldate.cjs.js';
+cjs.output.format = 'cjs';
+
+export default [config, min, es, cjs];

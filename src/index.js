@@ -1,346 +1,316 @@
-import './jdate.less';
+import './index.less';
 
+import BScroll from './lib/bscroll.min';
 import {version} from '../package.json';
 
-let $ = typeof $ != 'undefined'? $ : typeof jQuery != 'undefined'? jQuery : null,
-    h = 36;
-
-Jdate.usejQuery = function(jQuery) {
-  $ = jQuery;
-};
-function Jdate(config){
-  if(!$){
-    console.error('jQuery is not defined');
-    return;
+let $ = (selector, flag) => {
+  if(typeof selector != 'string' && selector.nodeType){
+    return selector;
   }
-  if(!config || !config.el){return;}
-  let _this = this,
-      el = _this.$(config.el);
 
-  if(!el || el.bindJdate){return;}
-  el.bindJdate = 1;
-  _this.extend(config);
-  _this.tap(el,function(){
-      _this.show();
-  })
-  // 设置默认日期
-  if(config.value){
-      if(el.nodeName.toLowerCase() == 'input'){
-          el.value = config.value;
-      }else{
-          el.innerText = config.value;
-      }
-      let str = config.value.replace(/-/g,'/').replace(/[^\d/:\s]/g,''),
-          date = new Date(str);
+  return flag? document.querySelectorAll(selector) : document.querySelector(selector);
+}
 
-      if(!date || date == 'Invalid Date'){
-          console.error('Invalid Date：'+str);
-      }else{
-          el.bindDate = date;
-      }
+function getMonthName(monthNumber, monthNameLength) {
+  const fullMonths = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+  ];
+
+  const abbreviatedMonths = [
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+  ];
+
+  if (monthNameLength === 'full') {
+    return fullMonths[monthNumber - 1];
+  } else if (monthNameLength === 'short') {
+    return abbreviatedMonths[monthNumber - 1];
+  } else {
+    return monthNumber;
   }
 }
-Jdate.prototype = {
-  constructor: Jdate,
+
+function Rolldate(config = {}){
+  let _this = this,
+    el;
+
+  _this.extend(config);
+  if(config.el){
+    el = $(config.el);
+
+    if(!el || el.bindRolldate){return;}
+    el.bindRolldate = 1;
+
+    _this.tap(el, function(){
+      _this.show();
+    })
+  }
+  // set default date
+  if(config.value){
+    if(config.el){
+      if(el.nodeName.toLowerCase() == 'input'){
+        el.value = config.value;
+      }else{
+        el.innerText = config.value;
+      }
+    }
+    let str = config.value.replace(/-/g, '/').replace(/[^\d/:\s]/g, ''),
+      date = new Date(str);
+
+    if(!date || date == 'Invalid Date'){
+      console.error('Invalid Date：'+str);
+    }else{
+      if(config.el){
+        el.bindDate = date;
+      }else{
+        _this.bindDate = date;
+      }
+    }
+  }
+}
+Rolldate.prototype = {
+  constructor: Rolldate,
   baseData: function(){
     return {
-        domId:{
-          YYYY:'jdate-year',
-          MM:'jdate-month',
-          DD:'jdate-day',
-          hh:'jdate-hour',
-          mm:'jdate-min',
-          ss:'jdate-sec'
+      domId:{
+        YYYY:'rolldate-year',
+        MM:'rolldate-month',
+        DD:'rolldate-day',
+        hh:'rolldate-hour',
+        mm:'rolldate-min',
+        ss:'rolldate-sec'
+      },
+      opts:{//Plugin default configuration
+        el:'',
+        format:'YYYY-MM-DD',
+        beginYear:2000,
+        endYear:2100,
+        init:null,
+        moveEnd:null,
+        confirm:null,
+        cancel:null,
+        minStep:1,
+        trigger:'tap',
+        lang:{title:'Select Date', cancel:'Cancel', confirm:'Set', year:'', month:'', day:'', hour:'', min:'', sec:''},
+        theme: {
+          selectedBackground: 'lightgrey',
+          fontColor: 'black'
         },
-        opts:{//插件默认配置
-            el:'',
-            format:'YYYY-MM-DD',
-            beginYear:2000,
-            endYear:2100,
-            init:null,
-            moveEnd:null,
-            confirm:null,
-            cancel:null,
-            minStep:1,
-            trigger:'tap',
-            lang:{title:'选择日期',cancel:'取消',confirm:'确认',year:'年',month:'月',day:'日',hour:'时',min:'分',sec:'秒'}
+        monthNameLength: '',
+        showZeroBefore: {
+          date: true,
+          time: true
         }
+      }
     };
   },
   extend: function(config){
-      let _this = this,
-          opts = _this.baseData().opts;
+    let _this = this,
+      opts = _this.baseData().opts;
 
-      for(let key in opts){
-          if(opts[key] && Object.prototype.toString.call(opts[key]) == '[object Object]'){
-              for(let key2 in config[key]){
-                  opts[key][key2] = config[key][key2] == undefined? opts[key][key2]:config[key][key2];
-              }
-          }else{
-              opts[key] = config[key] || opts[key];
-          }
+    for(let key in opts){
+      if(opts[key] && Object.prototype.toString.call(opts[key]) == '[object Object]'){
+        for(let key2 in config[key]){
+          opts[key][key2] = config[key][key2] == undefined? opts[key][key2]:config[key][key2];
+        }
+      }else{
+        opts[key] = config[key] || opts[key];
       }
-      _this.config = opts;
+    }
+    _this.config = opts;
   },
   createUI: function(){
-        let _this = this,
-            data = _this.baseData(),
-            config = _this.config,
-            domId = data.domId,
-            FormatArr = config.format.split(/-|\/|\s|:/g),
-            len = FormatArr.length,
-            ul = '',
-            date = _this.$(config.el).bindDate || new Date(),
-            itemClass = '',
-            lang = config.lang;
+    let _this = this,
+      data = _this.baseData(),
+      config = _this.config,
+      domId = data.domId,
+      FormatArr = config.format.split(/-|\/|\s|:/g),
+      len = FormatArr.length,
+      ul = '',
+      date = config.el? ($(config.el).bindDate || new Date()) : (_this.bindDate || new Date()),
+      itemClass = '',
+      lang = config.lang,
+      theme = config.theme,
+      monthNameLength = config.monthNameLength,
+      showZeroBefore = config.showZeroBefore;
+      
 
-        for(let i=0; i<len; i++){
-            let f = FormatArr[i],
-                domMndex = 0;
+    for(let i=0; i<len; i++){
+      let f = FormatArr[i],
+        domMndex = 0;
 
-            ul += '<div id="'+ domId[f]+'"><ul>';
+      ul += '<div id="'+ domId[f]+'"><ul class="wheel-scroll">';
 
-            if(f == 'YYYY'){
-                for(let j=config.beginYear; j<=config.endYear; j++){
-                    itemClass = j == date.getFullYear()? 'active':'';
+      if(f == 'YYYY'){
+        for(let j=config.beginYear; j<=config.endYear; j++){
+          itemClass = j == date.getFullYear()? 'active':'';
 
-                    ul += `<li class="${itemClass}">${j}${lang.year}</li>`;
-                    domMndex ++;
-                }
-            }else if(f == 'MM'){
-                for(let k=1; k<=12; k++){
-                    itemClass = k == date.getMonth() + 1? 'active':'';
-
-                    ul += `<li class="${itemClass}">${k<10? '0'+k : k}${lang.month}</li>`;
-                    domMndex ++;
-                }
-            }else if(f == 'DD'){
-                let day = _this.bissextile(date.getFullYear(),date.getMonth() + 1);
-                for(let l=1; l<=day; l++){
-                    itemClass = l == date.getDate()? 'active':'';
-
-                    ul += `<li class="${itemClass}">${l<10? '0'+l : l}${lang.day}</li>`;
-                    domMndex ++;
-                }
-            }else if(f == 'hh'){
-                for(let m=0; m<=23; m++){
-                    itemClass = m == date.getHours()? 'active':'';
-
-                    ul += `<li class="${itemClass}">${m<10? '0'+m : m}${lang.hour}</li>`;
-                    domMndex ++;
-                }
-            }else if(f == 'mm'){
-                for(let n=0; n<=59; n+=config.minStep){
-                    itemClass = n == date.getMinutes()? 'active':'';
-
-                    ul += `<li class="${itemClass}">${n<10? '0'+n : n}${lang.min}</li>`;
-                    domMndex ++;
-                }
-            }else if(f == 'ss'){
-                for(let o=0; o<=59; o++){
-                    itemClass = o == date.getSeconds()? 'active':'';
-
-                    ul += `<li class="${itemClass}">${o<10? '0'+o : o}${lang.sec}</li>`;
-                    domMndex ++;
-                }
-            }
-            ul += '</ul></div>'
+          ul += `<li class="wheel-item ${itemClass}" data-index="${domMndex}" data-value="${j}">${j}${lang.year}</li>`;
+          domMndex ++;
         }
-        let $html = `<div class="jdate-mask"></div>
-            <div class="jdate-panel fadeIn">
+      }else if(f == 'MM'){
+        for(let k=1; k<=12; k++){
+          itemClass = k == date.getMonth() + 1? 'active':'';
+      
+          const monthName = getMonthName(k, monthNameLength);
+          ul += `<li class="wheel-item ${itemClass}" data-index="${domMndex}" data-value="${k < 10 && showZeroBefore.date ? '0' + k : k}">${monthName}${lang.month}</li>`;
+          domMndex ++;
+        }
+      }else if(f == 'DD'){
+        let day = _this.getMonthlyDay(date.getFullYear(), date.getMonth() + 1);
+        for(let l=1; l<=day; l++){
+          itemClass = l == date.getDate()? 'active':'';
+
+          ul += `<li class="wheel-item ${itemClass}" data-index="${domMndex}" data-value="${l<10 && showZeroBefore.date ? '0'+l : l}">${l<10 && showZeroBefore.date ? '0'+l : l}${lang.day}</li>`;
+          domMndex ++;
+        }
+      }else if(f == 'hh'){
+        for(let m=0; m<=23; m++){
+          itemClass = m == date.getHours()? 'active':'';
+
+          ul += `<li class="wheel-item ${itemClass}" data-index="${domMndex}" data-value="${m<10 && showZeroBefore.time ? '0'+m : m}">${m<10 && showZeroBefore.time ? '0'+m : m}${lang.hour}</li>`;
+          domMndex ++;
+        }
+      }else if(f == 'mm'){
+        for(let n=0; n<=59; n+=config.minStep){
+          itemClass = n == date.getMinutes()? 'active':'';
+
+          ul += `<li class="wheel-item ${itemClass}" data-index="${domMndex}" data-value="${n<10 && showZeroBefore.time ? '0'+n : n}">${n<10 && showZeroBefore.time ? '0'+n : n}${lang.min}</li>`;
+          domMndex ++;
+        }
+      }else if(f == 'ss'){
+        for(let o=0; o<=59; o++){
+          itemClass = o == date.getSeconds()? 'active':'';
+
+          ul += `<li class="wheel-item ${itemClass}" data-index="${domMndex}" data-value="${o<10 && showZeroBefore.time ? '0'+o : o}">${o<10 && showZeroBefore.time ? '0'+o : o}${lang.sec}</li>`;
+          domMndex ++;
+        }
+      }
+      ul += '</ul></div>'
+    }
+    let $html = `<div class="rolldate-mask"></div>
+            <div class="rolldate-panel">
                 <header>
-                    <span class="jdate-btn jdate-cancel">${lang.cancel}</span>
+                    <span class="rolldate-btn rolldate-cancel">${lang.cancel}</span>
                     ${lang.title}
-                    <span class="jdate-btn jdate-confirm">${lang.confirm}</span>
+                    <span class="rolldate-btn rolldate-confirm">${lang.confirm}</span>
                 </header>
-                <section class="jdate-content">
-                    <div class="jdate-dim mask-top"></div>
-                    <div class="jdate-dim mask-bottom"></div>
-                    <div class="jdate-wrapper">
+                <section class="rolldate-content">
+                    <div class="rolldate-dim mask-top"></div>
+                    <div class="rolldate-dim mask-center" style="background:${theme.selectedBackground}"></div>
+                    <div class="rolldate-dim mask-bottom"></div>
+                    <div class="rolldate-wrapper" style="color:${theme.fontColor}">
                         ${ul}
                     </div>
                 </section>
             </div>`,
-            box = document.createElement("div");
+      box = document.createElement("div");
 
-            box.className = `jdate-container`;
-            box.innerHTML = $html;
-            document.body.appendChild(box);
+    box.className = `rolldate-container`;
+    box.innerHTML = $html;
+    document.body.appendChild(box);
+
+    _this.scroll = {};
+
+    for(let i=0; i<len; i++){
+      let $id = domId[FormatArr[i]];
 
 
-        _this.scroll = {};
-
-        for(let i=0; i<len; i++){
-            let $id = domId[FormatArr[i]];
-
-            _this.scroll[FormatArr[i]] = $id;
-            _this.slide($('#' +$id +'>ul'))
+      _this.scroll[FormatArr[i]] = new BScroll('#'+$id, {
+        wheel: {
+          selectedIndex: 0
         }
-        if(_this.scroll['mm'] && config.minStep != 1){
-          $('#' + _this.scroll['mm'] +' li').eq(Math.round(date.getMinutes()/config.minStep)).addClass('active');
+      });
+
+      let that = _this.scroll[FormatArr[i]],
+        active = $(`#${$id} .active`),
+        index = active? active.getAttribute('data-index') : Math.round(date.getMinutes()/config.minStep);
+ 
+      that.wheelTo(index);
+      // end of scrolling
+      that.on('scrollEnd', () => {
+        if(config.moveEnd){
+          config.moveEnd.call(_this, that);
         }
-        $('.jdate-container ul').each(function(){
-            let that = $(this),
-                active = that.find('.active');
+        if([domId['YYYY'], domId['MM']].indexOf(that.wrapper.id) != -1 && _this.scroll['YYYY'] && _this.scroll['MM'] && _this.scroll['DD']){
+          let day = _this.getMonthlyDay(_this.getSelected(_this.scroll['YYYY']), _this.getSelected(_this.scroll['MM'])),
+            li = '',
+            domMndex = 0;
+          console.log("day: ",day);
+          if(day != $('#'+domId['DD']+' li', 1).length){
 
-            if(!active.length){return;}
-            let liTop = -(active.position().top);
-            that.animate({
-                top: liTop
-            },
-            0);
-        })
-  },
-  eventType:function(){
-    let isTouch = "ontouchend" in document;
-
-    return {
-      isTouch: isTouch,
-      tstart: isTouch ? "touchstart" : "mousedown",
-      tmove: isTouch ? "touchmove" : "mousemove",
-      tend: isTouch ? "touchend" : "mouseup",
-      tcancel: isTouch ? "touchcancel" : "mouseleave"
-    };
-  },
-  slide: function(el){
-    let _this = this,
-        domId = _this.baseData().domId,
-        lang = _this.config.lang;
-
-    //滑动
-    let T, mT, isPress = false,
-        events = _this.eventType();
-
-    el.bind(events.tstart, function(e) {
-      e.stopPropagation();
-      e.preventDefault();
-      e = e.originalEvent;
-      T = e.pageY || e.touches[0].pageY;
-      if (!events.isTouch) {
-        isPress = true;
-      }
-    })
-    el.bind(events.tmove, function(e) {
-      let  that = $(this);
-
-      e.stopPropagation();
-      e.preventDefault();
-      e = e.originalEvent;
-
-      if (!events.isTouch && !isPress) {
-        return false
-      };
-      mT = e.pageY || e.touches[0].pageY;
-      that.css('top', that.position().top + (mT - T) + 'px');
-      T = mT;
-      if (that.position().top > 0) that.css('top', '0');
-      if (that.position().top < -(that.height() - h)) that.css('top', '-' + (that.height() - h) + 'px');
-    })
-    el.bind(events.tend, function(e) {
-      let  that = $(this);
-
-      e.stopPropagation();
-      e.preventDefault();
-      e = e.originalEvent;
-      isPress = false;
-      dragEnd(that);
-    })
-    el.bind(events.tcancel, function(e) {
-      let  that = $(this);
-
-      e.stopPropagation();
-      e.preventDefault();
-      e = e.originalEvent;
-
-      isPress = false;
-      dragEnd(that);
-    })
-
-    function dragEnd(that) {
-      //滚动调整
-      let t = that.position().top;
-
-      that.css('top', Math.round(t / h) * h + 'px');
-      //定位active
-      t = Math.round(Math.abs($(that).position().top));
-      let li = that.children('li').get(t / h);
-      $(li).addClass('active').siblings().removeClass('active');
-      //修正天数
-      if ([domId['YYYY'],domId['MM']].indexOf(that.parent().attr('id')) != -1 && _this.scroll['DD']) {
-        let year = $('#'+ domId['YYYY'] +' .active').text().replace(/\D/g,''),
-            month = $('#'+ domId['MM'] +' .active').text().replace(/\D/g,'');
-
-        if(!year || !month){
-          return ;
-        }
-        let day = _this.bissextile(year, month);
-        if (day != $('#'+ domId['DD'] +' li').length) {
-          let active = $('#'+ domId['DD'] +' .active'),
-              d = active.text().replace(/\D/g,''),
-              $html = '',
-              ul = $('#'+ domId['DD'] +' ul')
-
-          d > day && (d = day);
-
-          for(let l=1; l<=day; l++){
-                $html += `<li ${d == l?'class="active"':''}>${l<10? '0'+l : l}${lang.day}</li>`;
+            for(let l=1; l<=day; l++){
+              itemClass = l == date.getDate()? 'active':'';
+              li += `<li class="wheel-item ${itemClass}" data-index="${domMndex}" data-value="${l<10 && showZeroBefore.date ? '0'+l : l}">${l<10 && showZeroBefore.date ? '0'+l : l}${lang.day}</li>`;
+              domMndex++;
+            }
+            $('#'+domId['DD']+' ul').innerHTML = li;
+            _this.scroll['DD'].refresh();
           }
-          $('#'+domId['DD']+' ul').html($html);
-          if (Math.abs(ul.position().top) > (ul.height() - h)) ul.css('top', '-' + (ul.height() - h) + 'px');
         }
-      }
-      if(_this.config.moveEnd){
-          _this.config.moveEnd.call(_this);
-      }
-    }
-  },
-  $: function(selector,flag){
-      if(typeof selector != 'string' && selector.nodeType){
-          return selector;
-      }
+      })
 
-      return flag? document.querySelectorAll(selector) : document.querySelector(selector);
+    }
+    $('.rolldate-panel').className = 'rolldate-panel fadeIn';
   },
   tap:function (el, fn) {
     let _this = this,
-        hasTouch = "ontouchstart" in window;
-
+      hasTouch = "ontouchstart" in window;
+    
     if(hasTouch && _this.config.trigger == 'tap'){
-      let o = {};
-			el.addEventListener('touchstart',function(e){
-				let t = e.touches[0];
+      let o = {},
+        touchstart = function(e) {
+          let t = e.touches[0];
+    
+          o.startX = t.pageX;
+          o.startY = t.pageY;
+          o.sTime = + new Date;
+        },
+        touchend = function(e) {
+          let t = e.changedTouches[0];
+    
+          o.endX = t.pageX;
+          o.endY = t.pageY;
+          if((+ new Date) - o.sTime < 300){
+            if(Math.abs(o.endX-o.startX) + Math.abs(o.endY-o.startY) < 20){
+              e.preventDefault();
+              fn.call(this, e);
+            }
+          }
+          o = {};
+        };
 
-				o.startX = t.pageX;
-				o.startY = t.pageY;
-				o.sTime = + new Date;
-			});
-			el.addEventListener('touchend',function(e){
-				let t = e.changedTouches[0];
-
-				o.endX = t.pageX;
-				o.endY = t.pageY;
-				if((+ new Date) - o.sTime < 300){
-					if(Math.abs(o.endX-o.startX) + Math.abs(o.endY-o.startY) < 20){
-      			e.preventDefault();
-						fn.call(this,e);
-					}
-				}
-				o = {};
-			});
+      if(typeof fn == 'function'){
+        el.addEventListener('touchstart', touchstart);
+        el.addEventListener('touchend', touchend);
+      }else{
+        el.removeEventListener('touchstart', touchstart);
+        el.removeEventListener('touchend', touchend);
+      }
     }else{
-      el.addEventListener('click',function(e){
-				fn.call(this,e);
-			});
+      let click = function(e) {
+        fn.call(this, e);
+      };
+      if(typeof fn == 'function'){
+        el.addEventListener('click', click);
+      }else{
+        el.removeEventListener('click', click);
+      }
     }
   },
   show: function(){
     let _this = this,
-        config = _this.config,
-        el = _this.$(config.el);
+      config = _this.config,
+      el;
 
-    if(!el.bindJdate){return;}
-    if(el.nodeName.toLowerCase() == 'input'){el.blur();}
-    if(_this.$('.jdate-container')){return;}
+    if(config.el){
+      el = $(config.el);
+
+      if(!el.bindRolldate){return;}
+      if(el.nodeName.toLowerCase() == 'input'){el.blur();}
+    }
+    if($('.rolldate-container')){return;}
     if(config.init && config.init.call(_this) === false){return;}
 
     _this.createUI();
@@ -348,95 +318,115 @@ Jdate.prototype = {
   },
   hide: function(flag){
     let _this = this,
-        el = _this.$('.jdate-panel.fadeIn');
+      el = $('.rolldate-panel.fadeIn');
 
     if(el){
-      el.className = 'jdate-panel fadeOut';
+      el.className = 'rolldate-panel fadeOut';
       _this.destroy(flag);
     }
   },
   event: function(){
     let _this = this,
-         mask = _this.$('.jdate-mask'),
-         cancel = _this.$('.jdate-cancel'),
-         confirm = _this.$('.jdate-confirm');
+      mask = $('.rolldate-mask'),
+      cancel = $('.rolldate-cancel'),
+      confirm = $('.rolldate-confirm');
 
-    _this.tap(mask,function(){
+    _this.tap(mask, function(){
       _this.hide(1);
     })
-    _this.tap(cancel,function(){
+    _this.tap(cancel, function(){
       _this.hide(1);
     })
-    _this.tap(confirm,function(){
-        let config = _this.config,
-            el = _this.$(config.el),
-            date = config.format,
-            newDate = new Date();
+    _this.tap(confirm, function(){
+      let config = _this.config,
+        el,
+        date = config.format,
+        newDate = new Date();
 
-            for(let f in _this.scroll){
-              let d = $('#' + _this.scroll[f] + ' .active').text().replace(/\D/g,'');
+      for(let f in _this.scroll){
+        let d = _this.getSelected(_this.scroll[f]);
 
-              date = date.replace(f,d);
-              if(f == 'YYYY'){
-                  newDate.setFullYear(d);
-              }else if(f == 'MM'){
-                  newDate.setMonth(d-1);
-              }else if(f == 'DD'){
-                  newDate.setDate(d);
-              }else if(f == 'hh'){
-                  newDate.setHours(d);
-              }else if(f == 'mm'){
-                  newDate.setMinutes(d);
-              }else if(f == 'ss'){
-                  newDate.setSeconds(d);
-              }
-            }
-        if(config.confirm){
-            let flag = config.confirm.call(_this,date);
-            if(flag === false){
-                return false
-            }else if(flag){
-                date = flag;
-            }
+        date = date.replace(f, d);
+        if(f == 'YYYY'){
+          newDate.setFullYear(d);
+        }else if(f == 'MM'){
+          newDate.setMonth(d-1);
+        }else if(f == 'DD'){
+          newDate.setDate(d);
+        }else if(f == 'hh'){
+          newDate.setHours(d);
+        }else if(f == 'mm'){
+          newDate.setMinutes(d);
+        }else if(f == 'ss'){
+          newDate.setSeconds(d);
         }
+      }
+      if(config.confirm){
+        let flag = config.confirm.call(_this, date);
+        if(flag === false){
+          return false
+        }else if(flag){
+          date = flag;
+        }
+      }
+      if(config.el){
+        el = $(config.el);
         if(el.nodeName.toLowerCase() == 'input'){
-            el.value = date;
+          el.value = date;
         }else{
-            el.innerText = date;
+          el.innerText = date;
         }
-        _this.hide();
         el.bindDate = newDate;
+      }else{
+        _this.bindDate = newDate;
+      }
+      _this.hide();
+
     })
   },
-  bissextile: function(year,month){
-      let day;
-      if (month == 1 || month == 3 || month == 5 || month == 7 || month == 8 || month == 10 || month == 12) {
-          day = 31
-      } else if (month == 4 || month == 6 || month == 11 || month == 9) {
-          day = 30
-      } else if (month == 2) {
-          if (year % 4 == 0 && (year % 100 != 0 || year % 400 == 0)) { //闰年
-              day = 29
-          } else {
-              day = 28
-          }
-
+  getMonthlyDay: function(year, month){
+    let day;
+    if (month == 1 || month == 3 || month == 5 || month == 7 || month == 8 || month == 10 || month == 12) {
+      day = 31
+    } else if (month == 4 || month == 6 || month == 11 || month == 9) {
+      day = 30
+    } else if (month == 2) {
+      if (year % 4 == 0 && (year % 100 != 0 || year % 400 == 0)) { //Leap year
+        day = 29
+      } else {
+        day = 28
       }
-      return day;
+
+    }
+    return day;
   },
   destroy: function(flag){
-      let _this = this,
-         config = _this.config;
+    let _this = this,
+      config = _this.config;
 
-      if(flag && config.cancel){
-          config.cancel.call(_this);
-      }
-      setTimeout(function() {
-          let el = _this.$('.jdate-container');
-          document.body.removeChild(el);
-      }, 300);
+    for(let i in _this.scroll){
+      _this.scroll[i].destroy();
+    }
+
+    if(flag && config.cancel){
+      config.cancel.call(_this);
+    }
+
+    _this.tap($('.rolldate-mask'), 0);
+    _this.tap($('.rolldate-cancel'), 0);
+    _this.tap($('.rolldate-confirm'), 0);
+    setTimeout(function() {
+      let el = $('.rolldate-container');
+
+      if(el)document.body.removeChild(el);
+      el = null;
+    }, 300);
+  },
+  getSelected: function(scroll){
+    console.log('getSelected: ',$('#'+scroll.wrapper.id+' li', 1)[scroll.getSelectedIndex()].getAttribute("data-value"))
+    return $('#'+scroll.wrapper.id+' li', 1)[scroll.getSelectedIndex()].getAttribute("data-value");
   }
 }
-Jdate.version = version;
+Rolldate.version = version;
 
-export default Jdate;
+export default Rolldate;

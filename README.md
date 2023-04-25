@@ -1,108 +1,122 @@
-# jdate(jquery-date) [![npm](https://img.shields.io/npm/v/jquery-date.svg)](https://www.npmjs.com/package/jquery-date) [![npm](https://img.shields.io/npm/dm/jquery-date.svg)](https://www.npmjs.com/package/jquery-date)
-此为jdate 2.0新版，完全参照jdate的下一代版本<a href="https://github.com/weijhfly/rolldate">rolldate</a>做了全新改版，查看旧版请点击<a href="https://github.com/weijhfly/jqueryDatePlugin/tree/1.4.3">返回旧版(1.4.3分支)</a>  
-<br>
-此版特色：   
-1. 拥有和rolldate完全一样的功能；<br>
-2. 体积更小，兼容性更强；   
+# rolldate [![npm](https://img.shields.io/npm/v/rolldate.svg)](https://www.npmjs.com/package/rolldate) [![npm](https://img.shields.io/npm/dm/rolldate.svg)](https://www.npmjs.com/package/rolldate)
 
-不足之处：
-1. 滑动较慢；   
+This plugin is [jquery-date](https://github.com/weijhfly/jqueryDatePlugin "jquery-date") the new version of , mainly to solve the problems of the old version's unreasonable parameter design, low sliding efficiency, dependence on jquery, and no optional theme style, etc., and added a callback function to make the plugin more flexible.
 
-此版更适合滑动天数少的情况(比如限制只能滑动几天)，或者兼容性要求高的情况，一般情况更推荐使用rolldate。并且jdate基本不怎么更新和维护，主要作为一个次要版本出现。
-## 演示
-[jdate](https://weijhfly.github.io/jdate.html "jdate")(下方直接扫码即可体验)  
+## 2019/05/24 Version 3.0 update
 
-![jdate](https://weijhfly.github.io/images/jdate-demo.png)
+The previous version was 2.1.5,Changes in new versions (from 3.0.0)：
 
-## 使用方式
-**特别注意：**     
-jdate依赖jQuery，如果没有全局的$或jQuery(也要保证在jdate之前加载)，必须先使用以下的代码：  
-```js
-Jdate.usejQuery($);
-```
-如：
-```js
-import $ from 'jquery'
-import Jdate from 'jdate'
+1. The usage method is changed from new rolldate.Date to new Rolldate;
+2. Callback function adjustment: tapBefore was renamed init, confirmBefore was renamed confirm, confirmEnd was canceled, and cancel was added;
+3. The date format (format) is adjusted to unlimited, and can be freely combined according to the rules;
 
-Jdate.usejQuery($);
-new Jdate({
-  el:'#date'
-})
-```
-否则插件将报错，无法运行。
+## 2019/02/03 important version update
+
+The previous version was 1.5.1, the difference between the new version (starting from 2.0.0) and the previous version:
+
+1. Replaced the sliding plugin from iscroll to better-scroll to improve compatibility;
+2. Changed the interface style, making the operation more convenient;
+3. Cancel the rolldate.css file, just import js;
+4. Removed the sliding time settings for theme style and date initialization；  
+
+Note that versions before 2.0.0 will no longer be maintained, if necessary, please visit: [Old rolldate](https://weijhfly.github.io/rolldate-index2.html "rolldate")
+
+## Demo
+
+[rolldate](https://weijhfly.github.io/rolldate-index.html "rolldate") (scan the code directly below to experience)
+
+![rolldate](https://weijhfly.github.io/images/rolldate-demo.jpg)
+
+## How to use
+
 ### es6
+
 ```js
-import Jdate from 'jdate'
-new Jdate({
+import Rolldate from 'rolldate'
+new Rolldate({
   el:'#date'
 })
+
 ```
+
 ### commonJS
+
 ```js
-var Jdate = require('jdate');
-new Jdate({
+var Rolldate = require('rolldate');
+new Rolldate({
   el:'#date'
 })
+
 ```
+
 ### amd
+
 ```js
-require(['Jdate'],function(Jdate){
-  new Jdate({
+require(['rolldate'],function(Rolldate){
+  new Rolldate({
     el:'#date'
   })
 })
 ```
+
 ### cmd
+
 ```js
-seajs.use('Jdate',function(undefined){
-    //插件没有遵循cmd规范，这里的Jdate是全局的
-    new Jdate({
+
+seajs.use('rolldate',function(undefined){
+    //The plugin does not follow the cmd specification, the Rolldate here is global
+    new Rolldate({
       el:'#date'
     })
 });
 ```
-## 参数、方法说明
-名称|必填|默认值|说明
+
+## Parameters, method description
+
+Name|Required|Default|Description
 ---|:-:|:-:|---
-el|是|无|绑定插件的dom元素，插件内部使用document.querySelector，<br>也可以直接传递dom元素对象，只支持单个
-format|否|'YYYY-MM-DD'|日期格式，无限制。规则：年-YYYY 月-MM 日-DD 时-hh 分-mm 秒-ss 使用/、-、空格、:之一分隔，可随意组合
-beginYear|否|2000|日期开始年份
-endYear|否|2100|日期结束年份
-value|否|无|日期初始化的默认值，列如'2018-03-18'
-lang|否|年、月、日...|配置插件语言，默认：title:'选择日期',cancel:'取消',confirm:'确认',<br>year:'年',month:'月',day:'日',hour:'时',min:'分',sec:'秒'
-minStep|否|1|分钟按指定数分隔
-init|否|null|插件触发前的回调函数，return false可阻止插件执行
-moveEnd|否|null|插件滚动后的回调函数
-confirm|否|null|确认按钮触发前的回调函数，return false可阻止插件执行，<br>return其他值可修改日期，函数返回一个参数(选中的日期)
-cancel|否|null|插件取消时触发的回调函数
-trigger|否|'tap'|默认使用tap解决移动端click事件300ms延迟，可选click替换tap。注意使用tap会阻止其他绑定的click事件的触发
-show|否|无|主动触发插件，当trigger为tap时，主动触发插件应该使用此方法
-hide|否|无|主动隐藏插件
+el|No|None|Bind the dom element of the plug-in, the plug-in uses document.querySelector inside,<br>You can also pass the dom element object directly, only supports a single
+format|no|'YYYY-MM-DD'|date format, unlimited. Rules: year-YYYY month-MM day-DD hour-hh minute-mm second-ss separated by one of /, -, space, : and can be combined at will
+beginYear|No|2000|Date start year
+endYear|No|2100|Date end year
+value|no|none|the default value for date initialization, such as '2018-03-18'
+lang|No|Year, month, day...|Configure plugin language, default: title:'select date',cancel:'cancel',confirm:'confirm',<br>year:'year',month:' month',day:'day',hour:'hour',min:'minute',sec:'second'
+minStep|no|1|minutes separated by specified number
+init|no|null|The callback function before the plug-in is triggered, return false can prevent the plug-in from executing
+moveEnd|No|null|The callback function after the plugin scrolls, the function returns a parameter (better-scroll instance)
+confirm|No|null|The callback function before the confirmation button is triggered, return false can prevent the plug-in from executing, <br> return other values can modify the date, the function returns a parameter (the selected date)
+cancel|No|null|The callback function triggered when the plugin is canceled
+trigger|No|'tap'|By default, tap is used to solve the 300ms delay of the click event on the mobile terminal, and click can be used to replace tap. Note that using tap will prevent other bound click events from firing
+show|no|none|Active trigger plug-in, when the trigger is tap, active trigger plug-in should use this method
+hide|No|None|Actively hide plugins
+theme|No|selectedBackground: lightgrey, <br> fontColor: black|Sets the background and font color of the current selected date
+monthNameLength|No|Number|Sets the month format. Use 'full' to display full month, 'short' to display month abreviated, and let it empty to show number
+showZeroBefore|No|date: true, <br> time: true|Defines if the 0 show before the number for time and date
+
 ```js
-//完整参数、方法示例
-var jd = new Jdate({
+//Complete parameters, method examples
+var rd = new Rolldate({
     el: '#date',
     format: 'YYYY-MM-DD',
     beginYear: 2000,
     endYear: 2100,
     minStep:1,
-    lang:{title:'自定义标题'},
+    lang:{title:'custom title'},
     trigger:'tap',
     init: function() {
-      console.log('插件开始触发');
+      console.log('The plugin starts triggering');
     },
-    moveEnd: function() {
-      console.log('滚动结束');
+    moveEnd: function(scroll) {
+      console.log('end of scrolling');
     },
     confirm: function(date) {
-      console.log('确定按钮触发');
+      console.log('OK button fires');
     },
     cancel: function() {
-      console.log('插件运行取消');
+      console.log('Plugin run canceled');
     }
 })
-jd.show();
-jd.hide();
+rd.show();
+rd.hide();
 
 ```
