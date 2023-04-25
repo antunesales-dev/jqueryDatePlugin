@@ -103,6 +103,15 @@ var rd = new Rolldate({
     minStep:1,
     lang:{title:'custom title'},
     trigger:'tap',
+    theme: {
+      selectedBackground: 'lightgrey',
+      fontColor: 'black'
+    },
+    monthNameLength: '', //short (Jan), full (January), empty (01)
+    showZeroBefore: {
+      date: true,
+      time: true
+    },
     init: function() {
       console.log('The plugin starts triggering');
     },
